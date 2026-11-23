@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#272822">
+<title>Sublime Web — Code Editor</title>
+<!-- All assets are local so the page also works when opened directly from disk (file://). -->
+<link href="vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+<link href="vendor/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet">
+<link href="src/editor/editor.css" rel="stylesheet">
+<!-- Ace core plus every bundled mode/theme: preloaded so no dynamic XHR is needed on file:// -->
+<script src="vendor/ace/ace.js"></script>
+<script src="vendor/ace/ext-prompt.js"></script>
+<script src="vendor/ace/ext-searchbox.js"></script>
+<script src="vendor/ace/ext-settings_menu.js"></script>
+<script src="vendor/ace/mode-css.js"></script>
+<script src="vendor/ace/mode-html.js"></script>
+<script src="vendor/ace/mode-javascript.js"></script>
+<script src="vendor/ace/mode-json.js"></script>
+<script src="vendor/ace/mode-markdown.js"></script>
+<script src="vendor/ace/mode-php.js"></script>
+<script src="vendor/ace/mode-plain_text.js"></script>
+<script src="vendor/ace/mode-python.js"></script>
+<script src="vendor/ace/mode-scss.js"></script>
+<script src="vendor/ace/mode-sql.js"></script>
+<script src="vendor/ace/mode-text.js"></script>
+<script src="vendor/ace/mode-typescript.js"></script>
+<script src="vendor/ace/mode-xml.js"></script>
+<script src="vendor/ace/mode-yaml.js"></script>
+<script src="vendor/ace/theme-dracula.js"></script>
+<script src="vendor/ace/theme-github_light_default.js"></script>
+<script src="vendor/ace/theme-monokai.js"></script>
+<script src="vendor/ace/theme-nord_dark.js"></script>
+<script src="vendor/ace/theme-one_dark.js"></script>
+<script src="vendor/ace/theme-solarized_dark.js"></script>
+<script src="vendor/ace/theme-solarized_light.js"></script>
+<script src="vendor/ace/theme-tomorrow_night.js"></script>
+</head>
+<body class="sb-on">
+<div id="app">
+  <!-- Title bar with menus generated from the command registry -->
+  <header id="titlebar">
+    <button class="ib" id="btnSidebar" aria-label="Toggle sidebar" aria-controls="sidebar" title="Toggle Sidebar"><i class="bi bi-layout-sidebar" aria-hidden="true"></i></button>
+    <button class="ib" id="btnNew" aria-label="New file" title="New File"><i class="bi bi-file-earmark-plus" aria-hidden="true"></i></button>
+    <button class="ib" id="btnOpen" aria-label="Open file" title="Open File"><i class="bi bi-folder2-open" aria-hidden="true"></i></button>
+    <button class="ib" id="btnSave" aria-label="Save file" title="Save"><i class="bi bi-floppy" aria-hidden="true"></i></button>
+    <span class="tb-sep d-none d-md-block"></span>
+    <nav id="menubar" class="d-none d-md-flex" aria-label="Application menu"></nav>
+    <div id="titleText" class="title-text" aria-live="polite"></div>
+    <button class="ib" id="btnLayout" aria-label="Choose pane layout" aria-haspopup="listbox" title="Pane Layout"><i class="bi bi-layout-split" aria-hidden="true"></i></button>
+    <button class="ib" id="btnSettings" aria-label="Open preferences" title="Preferences (fonts, theme, editor)"><i class="bi bi-gear" aria-hidden="true"></i></button>
+    <button id="btnPalette" class="pal-btn" aria-label="Open command palette"><i class="bi bi-search" aria-hidden="true"></i><span class="d-none d-sm-inline">Search commands</span><kbd id="palKbd">Ctrl+Shift+P</kbd></button>
+  </header>
+  <div id="workspace">
+    <aside id="sidebar" aria-label="File explorer">
+      <div class="sb-head">Explorer</div>
+      <div class="sb-tree" id="sbTree" role="tree" aria-label="Open files"></div>
+      <div class="sb-resize" id="sbResize" role="separator" aria-orientation="vertical" aria-label="Resize sidebar" tabindex="0" title="Drag to resize sidebar"></div>
+    </aside>
+    <div id="scrim" aria-hidden="true"></div>
+    <main id="center">
+      <div id="tabbar">
+        <div id="tabs" role="tablist" aria-label="Open files"></div>
+        <button id="btnNewTab" class="ib" aria-label="New file" title="New File (Alt+N)"><i class="bi bi-plus-lg" aria-hidden="true"></i></button>
+      </div>
+      <div id="editors" data-layout="single">
+        <div class="pane focused" id="pane0" data-idx="0"><div class="pane-head"></div><div class="pane-body"><div class="ed" aria-label="Code editor, pane 1"></div><div class="minimap" aria-hidden="true"><canvas></canvas><div class="mm-slider"></div></div></div></div>
+        <div class="pane off" id="pane1" data-idx="1"><div class="pane-head"></div><div class="pane-body"><div class="ed" aria-label="Code editor, pane 2"></div><div class="minimap" aria-hidden="true"><canvas></canvas><div class="mm-slider"></div></div></div></div>
+        <div class="pane off" id="pane2" data-idx="2"><div class="pane-head"></div><div class="pane-body"><div class="ed" aria-label="Code editor, pane 3"></div><div class="minimap" aria-hidden="true"><canvas></canvas><div class="mm-slider"></div></div></div></div>
+        <div class="pane off" id="pane3" data-idx="3"><div class="pane-head"></div><div class="pane-body"><div class="ed" aria-label="Code editor, pane 4"></div><div class="minimap" aria-hidden="true"><canvas></canvas><div class="mm-slider"></div></div></div></div>
+        <!-- Find / replace -->
+        <div class="find-panel" id="findPanel" hidden role="search" aria-label="Find and replace">
+          <button class="ib" id="replaceToggle" aria-label="Toggle replace" aria-expanded="false"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+          <div class="rows">
+            <div class="frow">
+              <div class="finp">
+                <input class="fi" id="findInput" placeholder="Find" aria-label="Find" autocomplete="off" spellcheck="false">
+                <div class="tgs">
+                  <button class="tg" data-opt="regExp" aria-pressed="false" aria-label="Use regular expression" title="Regular expression (Alt+R)">.*</button>
+                  <button class="tg" data-opt="caseSensitive" aria-pressed="false" aria-label="Match case" title="Match case (Alt+C)">Aa</button>
+                  <button class="tg" data-opt="wholeWord" aria-pressed="false" aria-label="Match whole word" title="Whole word (Alt+W)">ab</button>
+                </div>
+              </div>
+              <span class="fcount" id="findCount" aria-live="polite">No results</span>
+              <button class="ib" id="findPrev" aria-label="Previous match" title="Previous (Shift+F3)"><i class="bi bi-arrow-up" aria-hidden="true"></i></button>
+              <button class="ib" id="findNext" aria-label="Next match" title="Next (F3)"><i class="bi bi-arrow-down" aria-hidden="true"></i></button>
+              <button class="ib" id="findClose" aria-label="Close find panel" title="Close (Esc)"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+            </div>
+            <div class="frow" id="replaceRow" hidden>
+              <input class="fi" id="replaceInput" placeholder="Replace" aria-label="Replace with" autocomplete="off" spellcheck="false">
+              <button class="fbtn" id="replaceOne" aria-label="Replace current match">Replace</button>
+              <button class="fbtn" id="replaceAll" aria-label="Replace all matches">All</button>
+            </div>
+          </div>
+        </div>
+        <div id="dropOverlay"><div><i class="bi bi-box-arrow-in-down me-2"></i>Drop files to open</div></div>
+      </div>
+    </main>
+  </div>
+  <footer id="statusbar" aria-label="Status bar">
+    <div>
+      <button class="sb-item" id="sbPos" aria-label="Cursor position. Click to go to line">Line 1, Column 1</button>
+      <span class="sb-item" id="sbSel">1 cursor</span>
+      <span class="sb-item hint" id="sbHint"></span>
+    </div>
+    <div>
+      <button class="sb-item" id="sbIndent" aria-label="Indentation settings">Spaces: 4</button>
+      <span class="sb-item" id="sbEnc">UTF-8</span>
+      <button class="sb-item" id="sbEol" aria-label="Line endings">LF</button>
+      <button class="sb-item" id="sbFont" aria-label="Change font" title="Change font and size"><i class="bi bi-type me-1" aria-hidden="true"></i><span id="sbFontTxt">Font</span></button>
+      <button class="sb-item" id="sbLang" aria-label="Change language mode" title="Change syntax / language">Plain Text</button>
+      <span class="sb-item" id="sbLines">1 line</span>
+    </div>
+  </footer>
+</div>
+<!-- Command palette -->
+<div class="modal" id="palette" tabindex="-1" aria-label="Command palette" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="pal-head">
+        <i class="bi bi-terminal" id="palIcon" aria-hidden="true"></i>
+        <input id="palInput" type="text" role="combobox" aria-expanded="true" aria-controls="palList" aria-autocomplete="list" aria-label="Command palette input" autocomplete="off" spellcheck="false" placeholder="Type a command…">
+      </div>
+      <ul id="palList" role="listbox" aria-label="Results"></ul>
+      <div class="pal-foot" id="palFoot"></div>
+    </div>
+  </div>
+</div>
+<!-- Generic dialog -->
+<div class="modal" id="dlg" tabindex="-1" aria-labelledby="dlgTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header py-2"><h2 class="modal-title fs-6" id="dlgTitle"></h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close dialog"></button></div>
+      <div class="modal-body"><p id="dlgMsg" class="mb-2"></p><input id="dlgInput" class="form-control sx" aria-label="Value" autocomplete="off" hidden></div>
+      <div class="modal-footer py-2" id="dlgFoot"></div>
+    </div>
+  </div>
+</div>
+<!-- Preferences: font, theme, editor -->
+<div class="modal" id="settings" tabindex="-1" aria-labelledby="settingsTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header py-2"><h2 class="modal-title fs-6" id="settingsTitle"><i class="bi bi-gear me-2" aria-hidden="true"></i>Preferences</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close preferences"></button></div>
+      <div class="modal-body">
+        <div class="set-sec">Font</div>
+        <div class="set-row"><label for="setFont">Font family</label><div class="ctl"><select id="setFont" class="form-select form-select-sm sx"></select></div></div>
+        <div class="set-row"><label for="setFontCustom">Custom font</label><div class="ctl"><input id="setFontCustom" class="form-control form-control-sm sx" placeholder="Any installed font, e.g. Cascadia Code" autocomplete="off" spellcheck="false"><button class="btn btn-sm btn-sx" id="setFontApply">Apply</button></div></div>
+        <div class="set-row"><label for="setSize">Font size</label><div class="ctl"><button class="ib" id="setSizeDown" aria-label="Decrease font size"><i class="bi bi-dash-lg" aria-hidden="true"></i></button><input id="setSize" type="range" class="form-range" min="8" max="40" step="1"><button class="ib" id="setSizeUp" aria-label="Increase font size"><i class="bi bi-plus-lg" aria-hidden="true"></i></button><span class="val" id="setSizeVal"></span></div></div>
+        <div class="set-row"><label for="setLh">Line height</label><div class="ctl"><input id="setLh" type="range" class="form-range" min="1.1" max="2.2" step="0.05"><span class="val" id="setLhVal"></span></div></div>
+        <div class="set-row"><span class="lbl">Ligatures</span><div class="ctl"><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" id="setLiga" aria-label="Font ligatures"></div></div></div>
+        <pre class="font-preview" id="fontPreview" aria-label="Font preview"><span class="c">// The quick brown fox jumps over the lazy dog</span>
+<span class="k">const</span> total = items.map(i =&gt; i.price * 2).filter(Boolean);
+<span class="k">if</span> (a !== b &amp;&amp; c &gt;= 0) { <span class="k">return</span> x =&gt; x != null; }  <span class="c">// 0O 1lI</span></pre>
+        <div class="set-sec">Editor</div>
+        <div class="set-row"><label for="setTheme">Color scheme</label><div class="ctl"><select id="setTheme" class="form-select form-select-sm sx"></select></div></div>
+        <div class="set-row"><label for="setIndent">Indent using</label><div class="ctl"><select id="setIndent" class="form-select form-select-sm sx"><option value="spaces">Spaces</option><option value="tabs">Tabs</option></select><select id="setTab" class="form-select form-select-sm sx" style="max-width:110px" aria-label="Tab width"><option value="2">Width 2</option><option value="3">Width 3</option><option value="4">Width 4</option><option value="8">Width 8</option></select></div></div>
+        <div class="set-row"><label for="setWrap">Word wrap</label><div class="ctl"><select id="setWrap" class="form-select form-select-sm sx"></select></div></div>
+        <div class="set-row"><span class="lbl">Show whitespace</span><div class="ctl"><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" id="setWs" aria-label="Show whitespace"></div></div></div>
+        <div class="set-row"><span class="lbl">Minimap</span><div class="ctl"><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" id="setMini" aria-label="Show minimap"></div></div></div>
+        <div class="set-row"><span class="lbl">Status bar</span><div class="ctl"><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" id="setStatus" aria-label="Show status bar"></div></div></div>
+      </div>
+      <div class="modal-footer py-2"><button class="btn btn-sm btn-sx me-auto" id="setReset"><i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Reset font</button><button class="btn btn-sm btn-sx primary" data-bs-dismiss="modal">Done</button></div>
+    </div>
+  </div>
+</div>
+<!-- Keyboard shortcuts cheat sheet / keybinding editor -->
+<div class="modal" id="sheet" tabindex="-1" aria-labelledby="sheetTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content" style="max-height:82vh">
+      <div class="modal-header py-2 gap-2">
+        <h2 class="modal-title fs-6" id="sheetTitle">Keyboard Shortcuts</h2>
+        <input id="sheetFilter" class="form-control sx form-control-sm ms-auto" style="max-width:220px" placeholder="Filter…" aria-label="Filter shortcuts" autocomplete="off">
+        <button class="btn btn-sm btn-sx" id="sheetReset" aria-label="Reset key bindings to defaults"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset</button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close shortcuts"></button>
+      </div>
+      <div class="modal-body" id="sheetBody"></div>
+      <div class="modal-footer py-2 justify-content-start text-secondary small">Click the pencil to rebind a command. Chords are supported (press two combinations). Backspace unbinds.</div>
+    </div>
+  </div>
+</div>
+<!-- Picker popover (language, indentation, line endings, layout) -->
+<div id="picker" hidden role="dialog" aria-label="Picker">
+  <div class="pk-title" id="pkTitle"></div>
+  <input class="pk-filter" id="pkFilter" placeholder="Filter…" aria-label="Filter options" autocomplete="off" spellcheck="false">
+  <ul class="pk-list" id="pkList" role="listbox"></ul>
+</div>
+<div id="toasts" aria-live="polite" aria-atomic="false"></div>
+<input type="file" id="fileInput" multiple hidden aria-hidden="true" tabindex="-1">
+<input type="file" id="folderInput" webkitdirectory directory multiple hidden aria-hidden="true" tabindex="-1">
+<script src="vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

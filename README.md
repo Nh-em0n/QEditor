@@ -1,24 +1,13 @@
-# Sublime Web — vanilla JS code editor
+## QEditor
+
+![screenshot_QEditor](https://i.imgur.com/pps33U9.png)
+
+[QEditor](https://nh-em0n.github.io/QEditor/) a Sublime like web text editor — written in pure vanilla JS
 
 A keyboard-driven, multi-pane code editor that runs in the browser. It uses **plain
 JavaScript ES modules** — no framework, no TypeScript, no CSS utility build step.
-The file-explorer sidebar is resizable by dragging its right edge (or with the arrow keys),
-and the title bar can be hidden from **View → Toggle Header** or with `Alt+H`.
 
-## Run it
-
-**Just double-click `index.html`.** No server, install, or internet connection is
-needed: `app.js` is a prebuilt classic-script bundle of the ES modules, and all
-Ace / Bootstrap / icon assets are vendored in `vendor/`.
-
-There are no npm files. `src/` is the readable ES-module source; `app.js` is the
-prebuilt bundle the page loads. If you edit `src/`, regenerate `app.js` with esbuild:
-
-```bash
-esbuild src/main.js --bundle --format=iife --target=es2020 --outfile=app.js --legal-comments=none
-```
-
-## Project structure
+### Project structure
 
 ```
 index.html                 static UI shell, local vendor scripts, loads app.js
